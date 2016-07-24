@@ -3,12 +3,15 @@
 
 var image_num = 0;
 var vis_raster = false;
-var current_image = 'data/random_noise 500.png';
+// var current_image = 'data/random_noise 500.png';
+var current_image = 'data/moncada.jpg';
+// var current_image = 'data/mona.jpg';
 
 var symbol_raster, raster;
+var raster_updated = false;
 var grid = new Size();
-grid.width = $('#grid-width').val();
-grid.height = $('#grid-height').val();
+grid.width = parseInt($('#grid-width').val());
+grid.height = parseInt($('#grid-height').val());
 var psymbol = createSymbol();
 
 function createSymbol() {
@@ -24,7 +27,6 @@ function createSymbol() {
 handleImage(current_image);
 
 function handleImage(image) {
-  if (image != current_image)   image_num++;
   console.log('Got image: ' + image_num.toString());
 
   // Remove existing symbol_raster
@@ -37,28 +39,41 @@ function handleImage(image) {
   raster.on('load', function() {
     // raster.fitBounds(view.bounds, true);
     raster.fitBounds(view.bounds);
+
+    var start = raster.bounds.point.clone();
+    start.x += grid.width / 2;
+    start.y += grid.height / 2;
+    var dim = raster.bounds.clone();
+    dim.width  += start.x;
+    dim.height += start.y;
+
     symbol_raster = new Group();
-    for (var x = 0; x < view.size.width/grid.width; x++) {
-      for (var y = 0; y < view.size.height/grid.height; y++) {
-        var placed = psymbol.clone();
-        placed.scale(grid.width/2, grid.height/2);
-        placed.position = {
-          x: x * grid.width,
-          y: y * grid.height
-        };
-        symbol_raster.addChild(placed);
+
+    for (var x = start.x; x <= dim.width; x += grid.width) {
+      for (var y = start.y; y <= dim.height; y += grid.height) {
+        var pos = new Point({ x: x, y: y });
+
+        if (pos.isInside(raster.bounds)) {
+          var placed = psymbol.clone();
+          placed.scale(grid.width/Math.sqrt(2), grid.height/Math.sqrt(2));
+          placed.position = pos;
+          symbol_raster.addChild(placed);
+        }
       }
     }
     var contour = new Path.Rectangle(raster.bounds);
+    // contour.fillColor = null;
     contour.strokeColor = "black";
-    console.log(contour);
+    symbol_raster.addChild(contour);
     // symbol_raster.fitBounds(view.bounds);
     // console.log(symbol_raster.children.length);
+    raster_updated = false;
   })
 }
 
 function onFrame(event) {
-  if(!symbol_raster) return;
+  // console.log(!symbol_raster || raster_updated);
+  if(!symbol_raster || raster_updated) return;
 
   // var amount = view.size.height / grid.height;
   // var length = Math.min(count + amount, symbol_raster.children.length);
@@ -66,15 +81,30 @@ function onFrame(event) {
   var length = symbol_raster.children.length;
   // console.log(length);
 
-  for(var i = 0; i < length; i++) {
+  for(var i = 0; i < length - 1 ; i++) {
     var piece = symbol_raster.children[i];
     var color = raster.getAverageColor(piece);
     // NOT WORKING #TODO
     // var color = raster.getPixel(piece.bounds.center);
-
+    var g_value = color.clone();
+    // console.log(g_value);
+    g_value = g_value.convert('gray');
+    piece.scale(1 - g_value.gray);
     piece.fillColor = color;
   }
+
+  raster_updated = true;
 }
+
+// UTILS
+// =====================================================
+function flipVisibility() {
+  symbol_raster.visible = !symbol_raster.visible;
+  raster.visible = !raster.visible;
+}
+
+// INTERACTION
+// =====================================================
 
 // function onKeyDown(event) {
 //   if(event.key == '0') {
@@ -87,8 +117,7 @@ function onFrame(event) {
 
 function onMouseUp(event) {
   // The amount of times the mouse has been released:
-  raster.visible = !raster.visible;
-  symbol_raster.visible = !symbol_raster.visible;
+  flipVisibility();
   view.draw();
 }
 
@@ -112,6 +141,7 @@ function onDocumentDrop(event) {
   reader.onload = function(event) {
     var image = document.createElement('img');
     image.onload = function () {
+      if (image != current_image)   image_num++;
       current_image = image;
       handleImage(image);
       view.draw();
@@ -141,6 +171,9 @@ function downloadDataUri(options) {
 // ===============================================================================
 $('#export-button').click(function() {
   raster.remove();
+  if(!symbol_raster.visible) {
+    flipVisibility();
+  }
   var svg = project.exportSVG({ asString: true });
   downloadDataUri({
   	data: 'data:image/svg+xml;base64,' + btoa(svg),
@@ -158,13 +191,13 @@ $('#uniform-button').click(function() {
 });
 
 $('#grid-width').change(function() {
-  grid.width = $('#grid-width').val();
+  grid.width = parseInt($('#grid-width').val());
   handleImage(current_image);
   view.draw();
 });
 
 $('#grid-height').change(function() {
-  grid.height = $('#grid-height').val();
+  grid.height = parseInt($('#grid-height').val());
   handleImage(current_image);
   view.draw();
 });

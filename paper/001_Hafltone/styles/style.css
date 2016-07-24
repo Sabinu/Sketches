@@ -10,9 +10,9 @@ input {
   font-family: 'Roboto Mono', monospace;
 }
 
-input[type="text"] {
+/*input[type="text"] {
   width: 50 px;
-}
+}*/
 
 /* Scale canvas with resize attribute to full size */
 canvas[resize] {
