@@ -2,13 +2,17 @@
 // certain browsers when serving this script online:
 
 var image_num = 0;
-// var count = 0;
+var vis_raster = false;
+var current_image = 'data/random_noise 500.png';
+
 var symbol_raster, raster;
-var grid = new Size(20, 20);
+var grid = new Size();
+grid.width = $('#grid-width').val();
+grid.height = $('#grid-height').val();
 var psymbol = createSymbol();
 
 function createSymbol() {
-  var path = new Path.Circle({radius: grid.width/2});
+  var path = new Path.Circle({radius: 1});
   path.fillColor = new Color( {
     // red: 100,
     alpha: 0.5
@@ -17,19 +21,18 @@ function createSymbol() {
   return path;
 }
 
-handleImage('data/random_noise 500.png');
+handleImage(current_image);
 
 function handleImage(image) {
+  if (image != current_image)   image_num++;
   console.log('Got image: ' + image_num.toString());
-  // count = 0;
-  // var size = symbol.item.bounds.size;
 
   // Remove existing symbol_raster
   if (symbol_raster) symbol_raster.remove();
   if (raster) raster.remove();
 
   raster = new Raster(image, view.center);
-  raster.visible = true;
+  raster.visible = vis_raster;
 
   raster.on('load', function() {
     // raster.fitBounds(view.bounds, true);
@@ -38,6 +41,7 @@ function handleImage(image) {
     for (var x = 0; x < view.size.width/grid.width; x++) {
       for (var y = 0; y < view.size.height/grid.height; y++) {
         var placed = psymbol.clone();
+        placed.scale(grid.width/2, grid.height/2);
         placed.position = {
           x: x * grid.width,
           y: y * grid.height
@@ -45,10 +49,12 @@ function handleImage(image) {
         symbol_raster.addChild(placed);
       }
     }
+    var contour = new Path.Rectangle(raster.bounds);
+    contour.strokeColor = "black";
+    console.log(contour);
     // symbol_raster.fitBounds(view.bounds);
     // console.log(symbol_raster.children.length);
   })
-  image_num++;
 }
 
 function onFrame(event) {
@@ -70,6 +76,25 @@ function onFrame(event) {
   }
 }
 
+// function onKeyDown(event) {
+//   if(event.key == '0') {
+//     // vis_raster = !vis_raster;
+//     raster.visible = !raster.visible;
+//     symbol_raster.visible = !symbol_raster.visible;
+//     view.draw();
+//   }
+// }
+
+function onMouseUp(event) {
+  // The amount of times the mouse has been released:
+  raster.visible = !raster.visible;
+  symbol_raster.visible = !symbol_raster.visible;
+  view.draw();
+}
+
+
+// ON drop
+// ============================================================
 function onResize() {
   project.activeLayer.position = view.center;
 }
@@ -87,6 +112,7 @@ function onDocumentDrop(event) {
   reader.onload = function(event) {
     var image = document.createElement('img');
     image.onload = function () {
+      current_image = image;
       handleImage(image);
       view.draw();
     };
@@ -110,10 +136,35 @@ function downloadDataUri(options) {
     + options.data + '"/></form>').appendTo('body').submit().remove();
 }
 
+
+// TOOLBAR ACTIONS
+// ===============================================================================
 $('#export-button').click(function() {
+  raster.remove();
   var svg = project.exportSVG({ asString: true });
   downloadDataUri({
   	data: 'data:image/svg+xml;base64,' + btoa(svg),
   	filename: 'export.svg'
   });
+  handleImage(current_image);
+  view.draw();
+});
+
+$('#uniform-button').click(function() {
+  grid.height = grid.width;
+  $('#grid-height').val(grid.width);
+  handleImage(current_image);
+  view.draw();
+});
+
+$('#grid-width').change(function() {
+  grid.width = $('#grid-width').val();
+  handleImage(current_image);
+  view.draw();
+});
+
+$('#grid-height').change(function() {
+  grid.height = $('#grid-height').val();
+  handleImage(current_image);
+  view.draw();
 });
