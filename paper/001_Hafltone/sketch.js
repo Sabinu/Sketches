@@ -20,7 +20,7 @@ var psymbol = createSymbol();
 
 function createSymbol() {
   var path = new Path.Circle({radius: 1});
-  path.fillColor = new Color( {
+  path.fillColor = new Color({
     alpha: 0.5
   });
   path.remove();
