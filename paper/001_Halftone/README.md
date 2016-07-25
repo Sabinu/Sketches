@@ -13,4 +13,7 @@
 - histogram
   - curve edit
   - clip histogram
-  - separate pain?
+  - separate display pane
+
+- cmyk separation
+  - [Halftone Wiki](https://en.wikipedia.org/wiki/Halftone)
