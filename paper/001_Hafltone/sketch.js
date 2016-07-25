@@ -8,16 +8,19 @@ var current_image = 'data/moncada.jpg';
 // var current_image = 'data/mona.jpg';
 
 var symbol_raster, raster;
-var raster_updated = false;
+var raster_update = false;
+var uniform_raster = true;
+var uniform_color  = false;
+var uniform_scale  = true;
+var inverse_scale  = true;
 var grid = new Size();
-grid.width = parseInt($('#grid-width').val());
-grid.height = parseInt($('#grid-height').val());
+grid.width  = parseInt($('#grid-width').val());
+grid.height = parseInt($('#grid-width').val());
 var psymbol = createSymbol();
 
 function createSymbol() {
   var path = new Path.Circle({radius: 1});
   path.fillColor = new Color( {
-    // red: 100,
     alpha: 0.5
   });
   path.remove();
@@ -25,6 +28,8 @@ function createSymbol() {
 }
 
 handleImage(current_image);
+
+///////////////////// END ////////////////////////////
 
 function handleImage(image) {
   console.log('Got image: ' + image_num.toString());
@@ -67,13 +72,13 @@ function handleImage(image) {
     symbol_raster.addChild(contour);
     // symbol_raster.fitBounds(view.bounds);
     // console.log(symbol_raster.children.length);
-    raster_updated = false;
+    raster_update = false;
   })
 }
 
 function onFrame(event) {
-  // console.log(!symbol_raster || raster_updated);
-  if(!symbol_raster || raster_updated) return;
+  if(!symbol_raster || raster_update) return;
+  // console.log('onFrame ran once.');
 
   // var amount = view.size.height / grid.height;
   // var length = Math.min(count + amount, symbol_raster.children.length);
@@ -86,14 +91,25 @@ function onFrame(event) {
     var color = raster.getAverageColor(piece);
     // NOT WORKING #TODO
     // var color = raster.getPixel(piece.bounds.center);
-    var g_value = color.clone();
-    // console.log(g_value);
-    g_value = g_value.convert('gray');
-    piece.scale(1 - g_value.gray);
-    piece.fillColor = color;
+    if (!uniform_scale) {
+      var g_value = color.clone();
+      g_value = g_value.convert('gray');
+      if (inverse_scale) {
+        piece.scale(1 - g_value.gray);
+      } else {
+        piece.scale(g_value.gray);
+      }
+    } else {
+      piece.scale(1/Math.sqrt(2));
+    }
+    if (!uniform_color) {
+      piece.fillColor = color;
+    } else {
+      piece.fillColor = 'black';
+    }
   }
 
-  raster_updated = true;
+  raster_update = true;
 }
 
 // UTILS
@@ -183,15 +199,59 @@ $('#export-button').click(function() {
   view.draw();
 });
 
-$('#uniform-button').click(function() {
-  grid.height = grid.width;
-  $('#grid-height').val(grid.width);
+$('#uniform-color').click(function() {
+  if (!uniform_color) {
+    $('#uniform-color').val('COLOR');
+  } else {
+    $('#uniform-color').val('BLACK');
+  }
+  uniform_color = !uniform_color;
+  handleImage(current_image);
+  view.draw();
+});
+
+$('#uniform-scale').click(function() {
+  if (uniform_scale) {
+    $('#uniform-scale').val('Non Scaled');
+    $('#inverse-scale').css('display', 'inline');
+  } else {
+    $('#uniform-scale').val('Scaled');
+    $('#inverse-scale').css('display', 'none');
+  }
+  uniform_scale = !uniform_scale;
+  handleImage(current_image);
+  raster_update = false;
+  view.draw();
+});
+
+$('#inverse-scale').click(function() {
+  inverse_scale = !inverse_scale;
+  handleImage(current_image);
+  view.draw();
+});
+
+$('#uniform-raster').click(function() {
+  if (uniform_raster) {
+    $('#uniform-raster').val('Uniform');
+  } else {
+    $('#uniform-raster').val('Non-uniform');
+  }
+  if (uniform_raster) {
+    $('#grid-height').css('display', 'inline');
+  } else {
+    grid.height = grid.width;
+    $('#grid-height').val(grid.width);
+    $('#grid-height').css('display', 'none');
+  }
+
+  uniform_raster = !uniform_raster;
   handleImage(current_image);
   view.draw();
 });
 
 $('#grid-width').change(function() {
   grid.width = parseInt($('#grid-width').val());
+  if (uniform_raster) grid.height = grid.width;
   handleImage(current_image);
   view.draw();
 });

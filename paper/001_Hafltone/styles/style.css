@@ -10,10 +10,6 @@ input {
   font-family: 'Roboto Mono', monospace;
 }
 
-/*input[type="text"] {
-  width: 50 px;
-}*/
-
 /* Scale canvas with resize attribute to full size */
 canvas[resize] {
     width: 100%;
@@ -27,5 +23,5 @@ canvas[resize] {
   padding-top: 1em;
   padding-bottom: 1em;
   width: 100%;
-  background-color: rgba(255, 255, 255, 0.5);
+  /*background-color: rgba(255, 255, 255, 0.5);*/
 }
