@@ -1,38 +1,23 @@
-var bubbles = [];
+var mymap = L.map('mapid').setView([44.43, 26.10], 13);
 
-function setup() {
-  createCanvas(600, 400);
-  // for (var i = 0; i < 2; i++) {
-  //   bubbles[i] = new Bubble(random(0, width), random(0, height));
-  // }
+L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+    attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
+    maxZoom: 18,
+    id: 'mapbox.satellite',
+    accessToken: 'pk.eyJ1Ijoic2FiaW51IiwiYSI6ImNpcjdyamZsODAwMXFpam1nOXl3bzl1djAifQ.T2RVI8AZuDpO8WXCAO64zQ'
+}).addTo(mymap);
+
+
+var marker = L.marker([44.43, 26.10]).addTo(mymap);
+
+
+var popup = L.popup();
+
+function onMapClick(event) {
+  popup
+    .setLatLng(event.latlng)
+    .setContent('You clicked the map at ' + event.latlng.toString())
+    .openOn(mymap);
 }
 
-function mouseReleased() {
-  bubbles.push(new Bubble(mouseX, mouseY));
-}
-
-function mouseDragged() {
-  bubbles.push(new Bubble(mouseX, mouseY));
-}
-
-function draw() {
-  background(0);
-  for (var i = 0; i < bubbles.length; i++) {
-    bubbles[i].move();
-    bubbles[i].display();
-  }
-}
-
-function Bubble(x, y) {
-  this.x = x;
-  this.y = y;
-  this.display = function() {
-    stroke(255);
-    noFill();
-    ellipse(this.x, this.y, 24, 24);
-  };
-  this.move = function() {
-    this.x += random(-1, 1);
-    this.y += random(-1, 1);
-  };
-}
+mymap.on('click', onMapClick);
